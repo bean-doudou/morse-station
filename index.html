@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>嘀嗒 · 摩斯电码收发站</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2311161A'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23E2A24C'/%3E%3C/svg%3E">
+<style>
+:root{
+  --ink:#11161A;
+  --panel:#1B2126;
+  --edge:#2C343A;
+  --text:#E6E1D6;
+  --dim:#8C9599;
+  --amber:#E2A24C;
+  --teal:#79B0AA;
+  --red:#C2604A;
+  --mono:"Courier New",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--ink);color:var(--text);font-family:var(--sans);
+  font-size:16px;line-height:1.7;
+  background-image:radial-gradient(circle at 80% -10%,rgba(226,162,76,.08),transparent 55%);
+}
+.wrap{max-width:1060px;margin:0 auto;padding:26px 18px 60px}
+@media(min-width:768px){.wrap{padding:46px 32px 80px}}
+
+/* ===== 顶部：报务台 ===== */
+.hero{display:grid;gap:26px;padding-bottom:26px;border-bottom:1px solid var(--edge)}
+@media(min-width:860px){
+  .hero{grid-template-columns:1.25fr .75fr;align-items:end;gap:40px}
+}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--dim);margin:0 0 14px}
+h1{
+  font-size:64px;line-height:1;margin:0 0 16px;letter-spacing:.02em;font-weight:600;
+}
+@media(min-width:768px){h1{font-size:88px}}
+h1 span{color:var(--amber)}
+.lede{color:#BFC5C2;max-width:34em;margin:0;font-size:15px}
+@media(min-width:768px){.lede{font-size:16px}}
+.rig{
+  border:1px solid var(--edge);background:var(--panel);padding:18px 18px 14px;
+  display:grid;gap:12px;border-radius:2px;
+}
+.rig-top{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.1em}
+.lamp{
+  width:14px;height:14px;border-radius:50%;background:#3A2E20;
+  box-shadow:inset 0 0 0 1px #4A3A24;transition:background .06s linear,box-shadow .06s linear;
+}
+.lamp.on{background:var(--amber);box-shadow:0 0 14px 2px rgba(226,162,76,.55)}
+.bars{display:flex;align-items:flex-end;gap:3px;height:44px}
+.bars i{flex:1;height:6px;background:var(--teal);opacity:.45;transition:height .12s ease}
+.bars.live i{animation:bounce .9s ease-in-out infinite}
+@keyframes bounce{0%,100%{height:6px;opacity:.35}50%{height:38px;opacity:.8}}
+.readout{
+  font-family:var(--mono);font-size:12px;color:var(--teal);letter-spacing:.08em;
+  border-top:1px solid var(--edge);padding-top:10px;min-height:2.4em;
+}
+
+/* ===== 面板 ===== */
+.panel{border:1px solid var(--edge);background:var(--panel);padding:20px;margin-top:26px;border-radius:2px}
+@media(min-width:768px){.panel{padding:26px}}
+.panel h2{font-size:20px;margin:0 0 4px;font-weight:600}
+.panel h2 small{font-family:var(--mono);font-weight:400;font-size:11px;color:var(--dim);letter-spacing:.12em;margin-left:10px}
+.panel p.note{color:var(--dim);font-size:14px;margin:0 0 16px}
+label{display:block;font-size:13px;color:var(--dim);margin-bottom:8px}
+textarea,input[type=text]{
+  width:100%;background:#0E1316;color:var(--text);border:1px solid var(--edge);
+  padding:12px;font-family:var(--sans);font-size:16px;line-height:1.6;border-radius:2px;
+}
+textarea{resize:vertical}
+textarea:focus,input:focus,button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+.out{
+  font-family:var(--mono);font-size:15px;letter-spacing:.06em;word-break:break-word;
+  min-height:64px;padding:12px;margin-top:12px;background:#0B0F12;border-left:2px solid var(--amber);
+  color:var(--amber);white-space:pre-wrap;
+}
+.out.empty{color:#5A6266;border-left-color:var(--edge)}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+button{
+  font-family:var(--sans);font-size:14px;padding:11px 18px;min-height:44px;
+  background:transparent;color:var(--text);border:1px solid var(--edge);cursor:pointer;
+  border-radius:2px;transition:border-color .15s,color .15s,background .15s;
+}
+button:hover{border-color:var(--teal);color:var(--teal)}
+button.primary{border-color:var(--amber);color:var(--amber)}
+button.primary:hover{background:rgba(226,162,76,.12)}
+button:disabled{opacity:.4;cursor:not-allowed;border-color:var(--edge);color:var(--dim)}
+.rate{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+.rate input[type=range]{width:120px;accent-color:var(--amber)}
+.rate b{color:var(--text);font-weight:400;min-width:56px;display:inline-block}
+
+/* ===== 码表 ===== */
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--edge);border:1px solid var(--edge);margin-top:18px}
+@media(min-width:560px){.keys{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:900px){.keys{grid-template-columns:repeat(6,1fr)}}
+.key{
+  background:var(--panel);border:0;padding:12px 10px;min-height:62px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;
+  font-family:inherit;transition:background .12s;
+}
+.key:hover,.key:focus-visible{background:#232B31;outline:none}
+.key b{font-family:var(--mono);font-size:17px;color:var(--text);font-weight:600}
+.key span{font-family:var(--mono);font-size:12px;color:var(--teal);letter-spacing:.1em}
+
+/* ===== 听写 ===== */
+.drill{display:grid;gap:12px;margin-top:16px}
+@media(min-width:700px){.drill{grid-template-columns:auto minmax(120px,180px) auto 1fr;align-items:center}}
+.drill input{text-transform:uppercase;letter-spacing:.1em;font-family:var(--mono)}
+.msg{font-size:14px;color:var(--dim)}
+.msg.ok{color:var(--teal)}
+.msg.bad{color:var(--red)}
+.score{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:14px;letter-spacing:.08em}
+.score b{color:var(--text);font-weight:400}
+
+footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--edge);color:#6E777B;font-size:12.5px;font-family:var(--mono);line-height:1.9}
+
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translate(-50%,10px);
+  background:#263034;color:var(--text);border:1px solid var(--edge);
+  font-size:13px;padding:9px 16px;border-radius:2px;opacity:0;pointer-events:none;
+  transition:opacity .18s,transform .18s;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div>
+      <p class="kicker">MORSE STATION · 练习台</p>
+      <h1>嘀<span>嗒</span></h1>
+      <p class="lede">把一句话拆成点与划，用一盏灯和一声蜂鸣发出去。左边写、右边解，下面还能练听写。</p>
+    </div>
+    <div class="rig">
+      <div class="rig-top"><span class="lamp" id="lamp"></span><span>TX <span id="lampText">IDLE</span></span></div>
+      <div class="bars" id="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="readout" id="readout">等待发送…</div>
+    </div>
+  </header>
+
+  <!-- ===== 发报机 ===== -->
+  <section class="panel">
+    <h2>发报机<small>ENCODE</small></h2>
+    <p class="note">电码只认 26 个字母和 10 个数字。汉字和标点没有对应编码，会显示成 ? —— 想发中文内容，先用拼音写。</p>
+    <label for="srcText">要发的内容</label>
+    <textarea id="srcText" rows="3" placeholder="例如：SEE YOU AT EIGHT"></textarea>
+    <div class="out empty" id="codeOut" aria-live="polite">输入后这里会出现点划</div>
+    <div class="row">
+      <button class="primary" id="btnPlay">播放电码</button>
+      <button id="btnPause" disabled>暂停</button>
+      <button id="btnTest">试听 SOS</button>
+      <button id="btnStop" disabled>停止</button>
+      <button id="btnCopy">复制电码</button>
+      <span class="rate">
+        <span>速率</span>
+        <input type="range" id="wpm" min="6" max="24" value="12" step="1" aria-label="发送速率">
+        <b id="wpmText">12 WPM</b>
+      </span>
+    </div>
+  </section>
+
+  <!-- ===== 收报机 ===== -->
+  <section class="panel">
+    <h2>收报机<small>DECODE</small></h2>
+    <p class="note">字母之间用一个空格，单词之间用斜杠。例如 <span style="font-family:var(--mono);color:var(--amber)">... --- / .-</span></p>
+    <label for="codeIn">点划电文</label>
+    <textarea id="codeIn" rows="3" placeholder="... --- ... / ---- . .-. .-.. ---"></textarea>
+    <div class="out empty" id="decOut" aria-live="polite">解出来会显示在这里</div>
+    <div class="row">
+      <button id="btnClearDec">清空</button>
+    </div>
+  </section>
+
+  <!-- ===== 码表 ===== -->
+  <section class="panel">
+    <h2>码表<small>REFERENCE · 点一下听一遍</small></h2>
+    <p class="note">国际通用电报码，字母与数字共 36 个。点击任意一格会按当前速率播放它。</p>
+    <div class="keys" id="keys"></div>
+  </section>
+
+  <!-- ===== 听写 ===== -->
+  <section class="panel">
+    <h2>听写练习<small>DRILL</small></h2>
+    <p class="note">先点播放，再凭听感写下字母。答错会告诉你正确答案。</p>
+    <div class="drill">
+      <button class="primary" id="btnDrill">播放一个字母</button>
+      <input type="text" id="drillAns" maxlength="1" placeholder="A" aria-label="输入听到的字母">
+      <button id="btnCheck">检查</button>
+      <div class="msg" id="drillMsg">还没开始。</div>
+    </div>
+    <div class="score">本轮成绩 <b id="scoreOk">0</b> / <b id="scoreN">0</b></div>
+  </section>
+
+  <footer>
+    点划按国际摩斯码排列：点 = 1 个时间单位，划 = 3 个，符号间停 1 个，字母间停 3 个。<br>
+    声音需要你点一下按钮才会响；移动端请确认没有静音。<br>
+    页面不联网、不上传任何内容，关掉浏览器即清空。
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var MORSE = {
+    A:".-", B:"-...", C:"-.-.", D:"-..", E:".", F:"..-.", G:"--.", H:"....",
+    I:"..", J:".---", K:"-.-", L:"-..", M:"--", N:"-.", O:"---", P:".--.",
+    Q:"--.-", R:".-.", S:"...", T:"-", U:"..-", V:"...-", W:".--", X:"-..-",
+    Y:"-.--", Z:"--..",
+    "0":"-----","1":".----","2":"..---","3":"...--","4":"....-",
+    "5":".....","6":"-....","7":"--...","8":"-...","9":"----."
+  };
+  var REV = {};
+  for (var k in MORSE){ REV[MORSE[k]] = k; }
+
+  var $ = function(id){ return document.getElementById(id); };
+  var srcText = $("srcText"), codeOut = $("codeOut"), codeIn = $("codeIn"), decOut = $("decOut");
+  var lamp = $("lamp"), lampText = $("lampText"), bars = $("bars"), readout = $("readout");
+  var btnPlay = $("btnPlay"), btnStop = $("btnStop"), btnCopy = $("btnCopy"), btnPause = $("btnPause");
+  var wpm = $("wpm"), wpmText = $("wpmText");
+  var drillMsg = $("drillMsg"), drillAns = $("drillAns");
+  var scoreOk = $("scoreOk"), scoreN = $("scoreN");
+
+  var actx = null, timers = [], playing = false, currentLetter = null;
+  var okCount = 0, totalCount = 0;
+
+  function unit(){ return 1200 / Number(wpm.value); }  // 1 单位 ≈ 毫秒
+
+  function toast(text){
+    var t = $("toast");
+    t.textContent = text;
+    t.classList.add("show");
+    setTimeout(function(){ t.classList.remove("show"); }, 1800);
+  }
+
+  /* ---------- 编码 ---------- */
+  function encode(text){
+    var up = text.toUpperCase().replace(/\s+/g, " ").trim();
+    if (!up) return "";
+    var words = up.split(" ");
+    var parts = [];
+    words.forEach(function(word){
+      var letters = [];
+      for (var i = 0; i < word.length; i++){
+        var ch = word[i];
+        letters.push(MORSE[ch] || "?");
+      }
+      if (letters.length) parts.push(letters.join(" "));
+    });
+    return parts.join(" / ");
+  }
+
+  function renderEncode(){
+    var code = encode(srcText.value);
+    if (!code){
+      codeOut.textContent = "输入后这里会出现点划";
+      codeOut.classList.add("empty");
+    } else {
+      codeOut.textContent = code;
+      codeOut.classList.remove("empty");
+    }
+  }
+  srcText.addEventListener("input", renderEncode);
+
+  /* ---------- 播放 ---------- */
+  function ensureCtx(){
+    if (!actx){
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      actx = new AC();
+    }
+    if (actx.state === "suspended") actx.resume();
+    return actx;
+  }
+
+  function clearTimers(){
+    timers.forEach(function(t){ clearTimeout(t); });
+    timers = [];
+  }
+
+  function setLamp(on){
+    lamp.classList.toggle("on", on);
+    lampText.textContent = on ? "KEY" : "IDLE";
+  }
+
+  var activeOscs = [];
+  var playState = null;   // { plan, from, onDone, startAt, paused }
+
+  function killNodes(){
+    activeOscs.forEach(function(o){
+      try { o.onended = null; o.stop(0); o.disconnect(); } catch (e) {}
+    });
+    activeOscs = [];
+    clearTimers();
+    setLamp(false);
+    bars.classList.remove("live");
+  }
+
+  function resetControls(){
+    playing = false;
+    btnPlay.disabled = false;
+    btnPause.disabled = true;
+    btnPause.textContent = "暂停";
+    btnStop.disabled = true;
+  }
+
+  function stopAll(){
+    killNodes();
+    playState = null;
+    resetControls();
+    readout.textContent = "已停止发送";
+  }
+
+  /* 把电文排成「音 + 灯」的时间表：符号 1 单位、字母间 3 单位、词间 7 单位 */
+  function buildTones(code){
+    var u = unit();
+    var list = [];
+    var t = 0;
+    var words = code.split("/");
+    words.forEach(function(word, wi){
+      if (wi > 0) t += 7 * u;
+      var letters = word.trim().split(" ");
+      letters.forEach(function(letter, li){
+        if (li > 0) t += 3 * u;
+        var syms = letter.split("");
+        syms.forEach(function(s, si){
+          if (si > 0) t += u;
+          if (s === "." || s === "-"){
+            var dur = u * (s === "." ? 1 : 3);
+            list.push({ start: t, dur: dur });
+            t += dur;
+          }
+        });
+      });
+    });
+    return { list: list, total: t };
+  }
+
+  function runPlan(plan, fromMs, onDone){
+    var ctx = ensureCtx();
+    if (!ctx){ toast("当前浏览器不支持音频输出"); if (onDone) onDone(); return; }
+
+    killNodes();
+    playing = true;
+    btnPlay.disabled = true;
+    btnPause.disabled = false;
+    btnPause.textContent = "暂停";
+    btnStop.disabled = false;
+
+    var offset = 0.06;
+    var t0 = ctx.currentTime + offset;
+    var total = Math.max(0, plan.total - fromMs);
+    var rest = [];
+
+    plan.list.forEach(function(tr){
+      var end = tr.start + tr.dur;
+      if (end <= fromMs) return;
+      var start = Math.max(0, tr.start - fromMs);
+      var dur = end - Math.max(fromMs, tr.start);
+      if (dur > 0) rest.push({ start: start, dur: dur });
+    });
+
+    if (rest.length) bars.classList.add("live");
+
+    rest.forEach(function(tr){
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 660;
+      var s = t0 + tr.start / 1000;
+      var e = s + tr.dur / 1000;
+      var edge = Math.min(0.006, (tr.dur / 1000) / 3);
+      gain.gain.setValueAtTime(0, s);
+      gain.gain.linearRampToValueAtTime(0.6, s + edge);
+      gain.gain.setValueAtTime(0.6, Math.max(s + edge, e - edge));
+      gain.gain.linearRampToValueAtTime(0, e);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(s);
+      osc.stop(e + 0.02);
+      activeOscs.push(osc);
+    });
+
+    rest.forEach(function(tr){
+      timers.push(setTimeout(function(){ setLamp(true); }, offset * 1000 + tr.start));
+      timers.push(setTimeout(function(){ setLamp(false); }, offset * 1000 + tr.start + tr.dur));
+    });
+
+    playState = { plan: plan, from: fromMs, onDone: onDone || null, startAt: t0, paused: false };
+    readout.textContent = "发送中 · 剩余约 " + (Math.round(total / 100) / 10) + " 秒";
+
+    timers.push(setTimeout(function(){ finish(); }, offset * 1000 + total + 120));
+  }
+
+  function finish(){
+    var st = playState;
+    playState = null;
+    killNodes();
+    resetControls();
+    readout.textContent = "发送完毕";
+    if (st && st.onDone) st.onDone();
+  }
+
+  function togglePause(){
+    if (!playState || !actx) return;
+    if (!playState.paused){
+      var elapsed = playState.from + (actx.currentTime - playState.startAt) * 1000;
+      if (elapsed < 0) elapsed = 0;
+      if (elapsed > playState.plan.total) elapsed = playState.plan.total;
+      killNodes();
+      playState.paused = true;
+      playState.from = elapsed;
+      btnPause.textContent = "继续";
+      readout.textContent = "已暂停 · 点「继续」接着播";
+    } else {
+      runPlan(playState.plan, playState.from, playState.onDone);
+    }
+  }
+
+  function playSymbols(symbols, onDone){
+    var plan = buildTones(symbols.join(""));
+    runPlan(plan, 0, onDone);
+  }
+
+  function playText(text){
+    var code = encode(text);
+    if (!code){ toast("先输入英文内容，或点「试听 SOS」听一段"); return; }
+    var plan = buildTones(code);
+    runPlan(plan, 0, null);
+  }
+
+  btnPlay.addEventListener("click", function(){ playText(srcText.value); });
+  btnTest.addEventListener("click", function(){
+    srcText.value = "SOS";
+    renderEncode();
+    playSymbols("...---...".split(""), null);
+  });
+  btnPause.addEventListener("click", togglePause);
+  btnStop.addEventListener("click", stopAll);
+
+  btnCopy.addEventListener("click", function(){
+    var code = encode(srcText.value);
+    if (!code){ toast("还没有可复制的电码"); return; }
+    var done = function(){ toast("电码已复制"); };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(code).then(done, function(){
+        codeOut.focus(); done();
+      });
+    } else {
+      toast("长按电码框手动复制");
+    }
+  });
+
+  wpm.addEventListener("input", function(){
+    wpmText.textContent = wpm.value + " WPM";
+  });
+
+  /* ---------- 解码 ---------- */
+  function decode(raw){
+    var norm = raw
+      .replace(/[·•]/g, ".")
+      .replace(/[—–―]/g, "-")
+      .replace(/\s*\/\s*/g, " | ")
+      .replace(/[|]{2,}/g, " | ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!norm) return "";
+    var words = norm.split("|").map(function(w){ return w.trim(); }).filter(function(w){ return w.length; });
+    var out = words.map(function(word){
+      return word.split(" ").map(function(code){
+        if (!code) return "";
+        return REV[code] || "?";
+      }).join("");
+    }).join(" ");
+    return out;
+  }
+
+  function renderDecode(){
+    var text = decode(codeIn.value);
+    if (!text){
+      decOut.textContent = "解出来会显示在这里";
+      decOut.classList.add("empty");
+    } else {
+      decOut.textContent = text;
+      decOut.classList.remove("empty");
+    }
+  }
+  codeIn.addEventListener("input", renderDecode);
+  $("btnClearDec").addEventListener("click", function(){
+    codeIn.value = "";
+    renderDecode();
+  });
+
+  /* ---------- 码表 ---------- */
+  var keysBox = $("keys");
+  Object.keys(MORSE).forEach(function(ch){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "key";
+    b.setAttribute("aria-label", "播放字母 " + ch);
+    var nb = document.createElement("b");
+    nb.textContent = ch;
+    var sp = document.createElement("span");
+    sp.textContent = MORSE[ch];
+    b.appendChild(nb);
+    b.appendChild(sp);
+    b.addEventListener("click", function(){ playSymbols(MORSE[ch].split(""), null); });
+    keysBox.appendChild(b);
+  });
+
+  /* ---------- 听写 ---------- */
+  var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+  $("btnDrill").addEventListener("click", function(){
+    currentLetter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+    drillAns.value = "";
+    drillMsg.className = "msg";
+    drillMsg.textContent = "播放中，注意听…";
+    playSymbols(MORSE[currentLetter].split(""), function(){
+      drillMsg.className = "msg";
+      drillMsg.textContent = "听到了吗？写下来点检查。";
+    });
+  });
+
+  $("btnCheck").addEventListener("click", function(){
+    if (!currentLetter){ drillMsg.className = "msg"; drillMsg.textContent = "先点左边的播放按钮。"; return; }
+    var ans = (drillAns.value || "").trim().toUpperCase();
+    if (!ans){ drillMsg.className = "msg"; drillMsg.textContent = "先写下一个字母。"; return; }
+    totalCount++;
+    if (ans === currentLetter){
+      okCount++;
+      drillMsg.className = "msg ok";
+      drillMsg.textContent = "答对了，" + currentLetter + " = " + MORSE[currentLetter];
+    } else {
+      drillMsg.className = "msg bad";
+      drillMsg.textContent = "正确答案是 " + currentLetter + "（" + MORSE[currentLetter] + "），你写的是 " + ans;
+    }
+    scoreOk.textContent = okCount;
+    scoreN.textContent = totalCount;
+    currentLetter = null;
+  });
+
+  drillAns.addEventListener("keydown", function(e){
+    if (e.key === "Enter") $("btnCheck").click();
+  });
+
+  /* ---------- 初始化 ---------- */
+  document.addEventListener("pointerdown", function(){
+    if (actx && actx.state === "suspended") actx.resume();
+  }, { passive: true });
+
+  renderEncode();
+  renderDecode();
+  wpmText.textContent = wpm.value + " WPM";
+})();
+</script>
+</body>
+</html>
